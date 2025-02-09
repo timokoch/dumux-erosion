@@ -1,0 +1,12 @@
+################################
+# Dune module information file #
+################################
+
+# Name of the module
+Module: dumux-granular
+Version: 0.1
+Maintainer: timok@simula.no
+# Required build dependencies
+Depends: dumux
+# Optional build dependencies
+#Suggests:
