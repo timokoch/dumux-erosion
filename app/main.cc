@@ -177,11 +177,16 @@ private:
 } // end namespace Dumux
 
 namespace Dumux::Properties::TTag {
+
+#ifndef GRID_TYPE
+#define GRID_TYPE Dune::YaspGrid<2,Dune::EquidistantOffsetCoordinates<double,2>>
+#endif
+
 struct PorousMediaErosionTest
 {
     using InheritsFrom = std::tuple<PorousMediaErosionModel, BoxModel>;
 
-    using Grid = Dune::YaspGrid<2, Dune::EquidistantOffsetCoordinates<double, 2>>;
+    using Grid = GRID_TYPE;
 
     template<class TypeTag>
     using Problem = PorousMediaErosionTestProblem<TypeTag>;
