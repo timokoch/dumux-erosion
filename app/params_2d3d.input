@@ -1,0 +1,34 @@
+[TimeLoop]
+TEnd = 50.0s
+InitialTimeStepSize = 0.1s
+MaxTimeStepSize = 10s
+
+[Grid]
+File = sphere.msh
+
+[Problem]
+Name = erosion_sphere
+
+[ModelParameters]
+Omega = 6.5
+PhiStar = 0.7
+CorrelationLength = 0.1
+FluidCompressibility = 1e-4
+SolidDiffusivity = 0.0
+FieldDiffusivity = 0.004
+FieldRelaxationRate = 0.01
+
+[BoundaryConditions]
+RampUpTime = 10.0s
+Evaporation = false
+FlowRate = 1.0
+
+[LinearSolver]
+Preconditioner.AmgAccumulationMode = AtOnce
+MaxIterations = 20
+
+[Newton]
+EnablePartialReassembly = true
+
+[Assembly]
+BoxVolVarsDependOnAllElementDofs = true

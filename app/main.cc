@@ -27,6 +27,10 @@
 #include <dumux/io/vtkoutputmodule.hh>
 #include <dumux/io/grid/gridmanager_yasp.hh>
 
+#if HAVE_DUNE_ALUGRID
+#include <dumux/io/grid/gridmanager_alu.hh>
+#endif
+
 #include "model.hh"
 
 namespace Dumux {
@@ -47,6 +51,9 @@ class PorousMediaErosionTestProblem : public FVProblem<TypeTag>
     using BoundaryTypes = Dumux::BoundaryTypes<GetPropType<TypeTag, Properties::ModelTraits>::numEq()>;
     using Indices = typename GetPropType<TypeTag, Properties::ModelTraits>::Indices;
 
+    static constexpr int dim = GridView::dimension;
+    static constexpr int dimWorld = GridView::dimensionworld;
+
 public:
     PorousMediaErosionTestProblem(std::shared_ptr<const GridGeometry> gridGeometry)
     : ParentType(gridGeometry)
@@ -58,45 +65,54 @@ public:
         const auto xLength = this->gridGeometry().bBoxMax()[0] - this->gridGeometry().bBoxMin()[0];
         const auto yLength = this->gridGeometry().bBoxMax()[1] - this->gridGeometry().bBoxMin()[1];
 
-        const auto inflowLength = getParam<Scalar>("BoundaryConditions.InflowLength");
-        const auto outflowLength = getParam<Scalar>("BoundaryConditions.OutflowLength");
-
-        inflowRatePerLength_ = flowRate/inflowLength;
-        if (inflowLength < xLength)
+        if constexpr (dim == dimWorld)
         {
-            inflowBottom_ = 0.5*inflowLength;
-            inflowSide_ = 0.0;
+            const auto inflowLength = getParam<Scalar>("BoundaryConditions.InflowLength");
+            const auto outflowLength = getParam<Scalar>("BoundaryConditions.OutflowLength");
+
+            inflowRatePerLength_ = flowRate/inflowLength;
+            if (inflowLength < xLength)
+            {
+                inflowBottom_ = 0.5*inflowLength;
+                inflowSide_ = 0.0;
+            }
+            else
+            {
+                inflowBottom_ = 0.5*xLength;
+                inflowSide_ = 0.5*(inflowLength - xLength);
+            }
+
+            outflowRatePerLength_ = evaporation ? 0.0 : flowRate/outflowLength;
+            if (outflowLength < xLength)
+            {
+                outflowBottom_ = 0.5*outflowLength;
+                outflowSide_ = 0.0;
+            }
+            else
+            {
+                outflowBottom_ = 0.5*xLength;
+                outflowSide_ = 0.5*(outflowLength - xLength);
+            }
+
+            evapRatePerArea_ = evaporation ? flowRate/(yLength*xLength) : 0.0;
+
+            if (this->gridGeometry().gridView().comm().rank() == 0)
+            {
+                std::cout << "\nBoundary conditions:\n";
+                std::cout << "-- inflow: " << inflowRatePerLength_*inflowLength << "\n";
+                std::cout << "-- outflow: " << outflowRatePerLength_*outflowLength << "\n";
+                std::cout << "-- evaporation: " << evapRatePerArea_*yLength*xLength << "\n";
+            }
+
+            if (inflowRatePerLength_*inflowLength - outflowRatePerLength_*outflowLength - evapRatePerArea_*yLength*xLength > 1e-6)
+                DUNE_THROW(Dune::Exception, "Mass balance in the boundary conditions not satisfied.");
         }
         else
         {
-            inflowBottom_ = 0.5*xLength;
-            inflowSide_ = 0.5*(inflowLength - xLength);
+            inflowRatePerLength_ = 0.0;
+            outflowRatePerLength_ = 0.0;
+            evapRatePerArea_ = flowRate/(yLength*0.1*xLength*0.1);
         }
-
-        outflowRatePerLength_ = evaporation ? 0.0 : flowRate/outflowLength;
-        if (outflowLength < xLength)
-        {
-            outflowBottom_ = 0.5*outflowLength;
-            outflowSide_ = 0.0;
-        }
-        else
-        {
-            outflowBottom_ = 0.5*xLength;
-            outflowSide_ = 0.5*(outflowLength - xLength);
-        }
-
-        evapRatePerArea_ = evaporation ? flowRate/(yLength*xLength) : 0.0;
-
-        if (this->gridGeometry().gridView().comm().rank() == 0)
-        {
-            std::cout << "\nBoundary conditions:\n";
-            std::cout << "-- inflow: " << inflowRatePerLength_*inflowLength << "\n";
-            std::cout << "-- outflow: " << outflowRatePerLength_*outflowLength << "\n";
-            std::cout << "-- evaporation: " << evapRatePerArea_*yLength*xLength << "\n";
-        }
-
-        if (inflowRatePerLength_*inflowLength - outflowRatePerLength_*outflowLength - evapRatePerArea_*yLength*xLength > 1e-6)
-            DUNE_THROW(Dune::Exception, "Mass balance in the boundary conditions not satisfied.");
 
         // model parameters
         fluidCompressibility_ = getParam<Scalar>("ModelParameters.FluidCompressibility");
@@ -138,7 +154,17 @@ public:
             return { 0.0, 0.0, 0.0 };
 
         const auto rampFactor = std::min(1.0, 1.0/rampUpTime_*time_);
-        return { -evapRatePerArea_*rampFactor, 0.0, 0.0 };
+        if constexpr (dim == dimWorld)
+            return { -evapRatePerArea_*rampFactor, 0.0, 0.0 };
+        else
+        {
+            if (globalPos[1] < this->gridGeometry().bBoxMin()[1] + 0.5)
+                return { evapRatePerArea_*rampFactor, 0.0, 0.0 };
+            else if (globalPos[1] > this->gridGeometry().bBoxMax()[1] - 0.5)
+                return { -evapRatePerArea_*rampFactor, 0.0, 0.0 };
+            else
+                return { 0.0, 0.0, 0.0 };
+        }
     }
 
     Scalar fluidCompressibility() const { return fluidCompressibility_; }
