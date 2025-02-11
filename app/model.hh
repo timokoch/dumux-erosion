@@ -40,7 +40,7 @@ public:
         priVars_ = elemSol[scv.indexInElement()];
         const auto solidity = priVars_[Indices::solidityIdx];
         const auto porosity = 1.0 - solidity;
-        permeability_ = porosity*porosity*porosity/(solidity*solidity); // Kozeny-Carman
+        permeability_ = problem.permeability(scv.center(), porosity);
     }
 
     Scalar pressure() const
@@ -174,7 +174,8 @@ public:
         const auto gradP = evalGradients(element, geometry, fvGeometry.gridGeometry(), elemSol, scv.dofPosition())[Indices::pressureIdx];
         const auto pSquared = gradP*gradP;
 
-        source[Indices::solidityEqIdx] = -volVars.solidity()*std::max(0.0, pSquared - psi);
+        const auto erosionRateFactor = problem.erosionRateFactor(scv.center());
+        source[Indices::solidityEqIdx] = -volVars.solidity()*std::max(0.0, pSquared - psi)*erosionRateFactor;
 
         source[Indices::blurEqIdx] = volVars.solidity() - volVars.g();
         source += problem.source(element, fvGeometry, elemVolVars, scv);

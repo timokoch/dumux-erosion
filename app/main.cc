@@ -114,6 +114,9 @@ public:
             evapRatePerArea_ = flowRate/(yLength*0.1*xLength*0.1);
         }
 
+        lensLowerLeft_ = getParam<GlobalPosition>("BoundaryConditions.LensLowerLeft", GlobalPosition(-101.0));
+        lensUpperRight_ = getParam<GlobalPosition>("BoundaryConditions.LensUpperRight", GlobalPosition(-100.0));
+
         // model parameters
         fluidCompressibility_ = getParam<Scalar>("ModelParameters.FluidCompressibility");
         fieldRelaxationRate_ = getParam<Scalar>("ModelParameters.FieldRelaxationRate");
@@ -167,6 +170,16 @@ public:
         }
     }
 
+    Scalar permeability(const GlobalPosition& globalPos, const Scalar porosity) const
+    {
+        const auto permeabilityFactor = inLens(globalPos) ? eps_ : 1.0;
+        const auto solidFraction = 1.0 - porosity;
+        return permeabilityFactor*porosity*porosity*porosity/(solidFraction*solidFraction); // Kozeny-Carman
+    }
+
+    Scalar erosionRateFactor(const GlobalPosition& globalPos) const
+    { return inLens(globalPos) ? 0.0 : 1.0; }
+
     Scalar fluidCompressibility() const { return fluidCompressibility_; }
     Scalar fieldRelaxationRate() const { return fieldRelaxationRate_; }
     Scalar solidDiffusivity() const { return solidDiffusivity_; }
@@ -178,18 +191,30 @@ public:
     void setSolidDiffusivity(const Scalar D) { solidDiffusivity_ = D; }
     void setTime(Scalar time) { time_ = time; }
 
+    bool inLens(const GlobalPosition& globalPos) const
+    {
+        bool inLens = true;
+        for (int i = 0; i < dim; ++i)
+            inLens = inLens && globalPos[i] > lensLowerLeft_[i] - eps_ && globalPos[i] < lensUpperRight_[i] + eps_;
+        return inLens;
+    }
+
 private:
     // boundary conditions
     bool onSide_(const GlobalPosition& globalPos) const
     {
-        return globalPos[0] < this->gridGeometry().bBoxMin()[0] + 1e-6 ||
-               globalPos[0] > this->gridGeometry().bBoxMax()[0] - 1e-6;
+        return globalPos[0] < this->gridGeometry().bBoxMin()[0] + eps_ ||
+               globalPos[0] > this->gridGeometry().bBoxMax()[0] - eps_;
     }
+
     Scalar time_ = 0.0;
     Scalar rampUpTime_;
     Scalar inflowRatePerLength_, inflowBottom_, inflowSide_;
     Scalar outflowRatePerLength_, outflowBottom_, outflowSide_;
     Scalar evapRatePerArea_;
+
+    GlobalPosition lensUpperRight_;
+    GlobalPosition lensLowerLeft_;
 
     // model parameters
     Scalar fluidCompressibility_;
@@ -198,6 +223,8 @@ private:
     Scalar fieldDiffusivity_;
 
     bool isIntializationPhase_ = true;
+
+    static constexpr Scalar eps_ = 1e-6;
 };
 
 } // end namespace Dumux
@@ -292,10 +319,16 @@ int main(int argc, char** argv)
     auto gridVariables = std::make_shared<GridVariables>(problem, gridGeometry);
     gridVariables->init(sol);
 
+    std::vector<int> lensMarker(gridGeometry->gridView().size(0), 0);
+    for (const auto& element : elements(gridGeometry->gridView(), Dune::Partitions::interior))
+        if (problem->inLens(element.geometry().center()))
+            lensMarker[gridGeometry->elementMapper().index(element)] = 1;
+
     VtkOutputModule<GridVariables, SolutionVector> vtkWriter(*gridVariables, sol, problem->name());
     vtkWriter.addVolumeVariable([](const auto& vv){ return vv.pressure(); }, "p");
     vtkWriter.addVolumeVariable([](const auto& vv){ return vv.solidity(); }, "phi");
     vtkWriter.addVolumeVariable([](const auto& vv){ return vv.g(); }, "g");
+    vtkWriter.addField(lensMarker, "obstacle");
     vtkWriter.write(-1.0);
 
     auto timeLoop = std::make_shared<CheckPointTimeLoop<Scalar>>(
