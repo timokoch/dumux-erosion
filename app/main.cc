@@ -348,7 +348,7 @@ int main(int argc, char** argv)
     // initialization phase idea: we start with a random field and then diffusive such that we get
     // a Gaussian random field for the solidity to start with
     const auto correlationLength = getParam<Scalar>("ModelParameters.CorrelationLength");
-    const auto D = correlationLength*correlationLength/4.0; // Running diffusion for 1 time unit
+    const auto D = correlationLength*correlationLength/(2.0*Grid::dimension); // Running diffusion for 1 time unit
     problem->startInitializationPhase();
     problem->setSolidDiffusivity(D);
 
