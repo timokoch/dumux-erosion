@@ -1,5 +1,5 @@
 [TimeLoop]
-TEnd = 50.0s
+TEnd = 100.0s
 InitialTimeStepSize = 0.1s
 MaxTimeStepSize = 10s
 
@@ -19,9 +19,9 @@ FieldDiffusivity = 0.004
 FieldRelaxationRate = 0.01
 
 [BoundaryConditions]
-RampUpTime = 10.0s
-Evaporation = false
-FlowRate = 1.0
+RampUpTime = 20.0s
+Evaporation = true
+FlowRate = 2.0
 
 [LinearSolver]
 Preconditioner.AmgAccumulationMode = AtOnce

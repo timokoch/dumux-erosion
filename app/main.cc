@@ -111,7 +111,8 @@ public:
         {
             inflowRatePerLength_ = 0.0;
             outflowRatePerLength_ = 0.0;
-            evapRatePerArea_ = flowRate/(yLength*0.1*xLength*0.1);
+            evapRatePerAreaIn_ = flowRate/(2*M_PI*yLength*0.5);
+            evapRatePerArea_ = evaporation ? flowRate/(4*M_PI*yLength*yLength - 2*M_PI*yLength*0.5) : 0;
         }
 
         lensLowerLeft_ = getParam<GlobalPosition>("BoundaryConditions.LensLowerLeft", GlobalPosition(-101.0));
@@ -162,11 +163,11 @@ public:
         else
         {
             if (globalPos[1] < this->gridGeometry().bBoxMin()[1] + 0.5)
-                return { evapRatePerArea_*rampFactor, 0.0, 0.0 };
-            else if (globalPos[1] > this->gridGeometry().bBoxMax()[1] - 0.5)
-                return { -evapRatePerArea_*rampFactor, 0.0, 0.0 };
+                return { evapRatePerAreaIn_*rampFactor, 0.0, 0.0 };
+            else if (evapRatePerArea_ < eps_ && globalPos[1] > this->gridGeometry().bBoxMax()[1] - 0.5)
+                return { -evapRatePerAreaIn_*rampFactor, 0.0, 0.0 };
             else
-                return { 0.0, 0.0, 0.0 };
+                return { -evapRatePerArea_*rampFactor, 0.0, 0.0 };
         }
     }
 
@@ -212,6 +213,7 @@ private:
     Scalar inflowRatePerLength_, inflowBottom_, inflowSide_;
     Scalar outflowRatePerLength_, outflowBottom_, outflowSide_;
     Scalar evapRatePerArea_;
+    Scalar evapRatePerAreaIn_ = 0.0;
 
     GlobalPosition lensUpperRight_;
     GlobalPosition lensLowerLeft_;
