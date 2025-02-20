@@ -24,7 +24,7 @@
 
 #include <dune/grid/yaspgrid.hh>
 #include <dumux/io/chrono.hh>
-#include <dumux/io/vtkoutputmodule.hh>
+#include <dumux/io/gridwriter.hh>
 #include <dumux/io/grid/gridmanager_yasp.hh>
 
 #if HAVE_DUNE_ALUGRID
@@ -227,6 +227,26 @@ private:
     static constexpr Scalar eps_ = 1e-6;
 };
 
+template<class Grid>
+struct OutputModuleTraits
+{
+    static constexpr auto format = IO::Format::pvd_with(IO::Format::vti.with({
+        .encoder = IO::Encoding::raw,
+        .compressor = IO::Compression::zlib,
+    }));
+};
+
+#if HAVE_DUNE_ALUGRID
+template<int dim, int dimWorld>
+struct OutputModuleTraits<Dune::ALUGrid<dim, dimWorld, Dune::simplex, Dune::conforming>>
+{
+    static constexpr auto format = IO::Format::pvd_with(IO::Format::vtu.with({
+        .encoder = IO::Encoding::raw,
+        .compressor = IO::Compression::zlib,
+    }));
+};
+#endif
+
 } // end namespace Dumux
 
 namespace Dumux::Properties::TTag {
@@ -324,7 +344,8 @@ int main(int argc, char** argv)
         if (problem->inLens(element.geometry().center()))
             lensMarker[gridGeometry->elementMapper().index(element)] = 1;
 
-    VtkOutputModule<GridVariables, SolutionVector> vtkWriter(*gridVariables, sol, problem->name());
+    IO::OutputModule vtkWriter(OutputModuleTraits<Grid>::format, *gridVariables, sol, problem->name());
+
     vtkWriter.addVolumeVariable([](const auto& vv){ return vv.pressure(); }, "p");
     vtkWriter.addVolumeVariable([](const auto& vv){ return vv.solidity(); }, "phi");
     vtkWriter.addVolumeVariable([](const auto& vv){ return vv.g(); }, "g");
