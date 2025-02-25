@@ -288,12 +288,13 @@ SolutionVector createInitialSolution(const GridGeometry& gg)
 
     // Generate random number and add processor offset
     // For sequential runs `rank` always returns `0`.
-    std::mt19937 gen(0); // seed is 0 for deterministic results
+    const int rank = gg.gridView().comm().rank();
+    std::mt19937 gen(rank);
     std::uniform_real_distribution<> dis(0.0, 1.0);
     for (int n = 0; n < sol.size(); ++n)
     {
         sol[n][0] = 0.0;
-        sol[n][1] = 0.8 + 0.1*(0.5-dis(gen)) + gg.gridView().comm().rank();
+        sol[n][1] = 0.8 + 0.1*(0.5-dis(gen)) + rank;
         sol[n][2] = 0.8;
     }
 
@@ -313,6 +314,7 @@ SolutionVector createInitialSolution(const GridGeometry& gg)
         for (int n = 0; n < sol.size(); ++n)
             sol[n][1] -= std::floor(sol[n][1]);
     }
+
     return sol;
 }
 
