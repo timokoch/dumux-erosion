@@ -4,7 +4,6 @@
 // SPDX-FileCopyrightInfo: Copyright © Timo Koch
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
-
 #ifndef DUMUX_POROUS_MEDIA_EROSION_MODEL_HH
 #define DUMUX_POROUS_MEDIA_EROSION_MODEL_HH
 

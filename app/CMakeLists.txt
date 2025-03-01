@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightInfo: Copyright © Timo Koch
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-dune_symlink_to_source_files(FILES params.input params_3d.input params_2d3d.input sphere.msh)
+dune_symlink_to_source_files(FILES params.input params_3d.input params_2d3d.input sphere.msh parabol.msh halfsphere.msh)
 
 dumux_add_test(
   NAME test_erosion_2d

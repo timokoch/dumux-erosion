@@ -20,6 +20,7 @@ FluidCompressibility = 1e-4
 SolidDiffusivity = 0.0
 FieldDiffusivity = 0.008
 FieldRelaxationRate = 0.01
+InitialStddev = 0.2
 
 [BoundaryConditions]
 RampUpTime = 10.0s
