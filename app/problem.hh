@@ -327,7 +327,7 @@ public:
             {
                 for (const auto& [eIdx, strength] : pointSources_)
                     if (fvGeometry.elementIndex() == eIdx)
-                        return { strength/element.geometry().volume() - evapRatePerVolume_*rampFactor, 0.0, 0.0 };
+                        return { rampFactor*(strength/element.geometry().volume() - evapRatePerVolume_), 0.0, 0.0 };
             }
 
             assert(heightSphericalCapIn_ > 0.0);
