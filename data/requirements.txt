@@ -1,0 +1,4 @@
+mpi4py
+pyvista
+gmsh
+git+https://github.com/ComputationalPhysiology/ukb-atlas

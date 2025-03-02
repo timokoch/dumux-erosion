@@ -12,6 +12,7 @@
 #include <dumux/common/fvproblem.hh>
 #include <dumux/common/properties.hh>
 #include <dumux/common/parameters.hh>
+#include <dumux/geometry/distance.hh>
 
 namespace Dumux {
 
@@ -31,6 +32,7 @@ class PorousMediaErosionTestProblem : public FVProblem<TypeTag>
     using NumEqVector = Dumux::NumEqVector<PrimaryVariables>;
     using BoundaryTypes = Dumux::BoundaryTypes<GetPropType<TypeTag, Properties::ModelTraits>::numEq()>;
     using Indices = typename GetPropType<TypeTag, Properties::ModelTraits>::Indices;
+    using PointSource = GetPropType<TypeTag, Properties::PointSource>;
 
     static constexpr int dim = GridView::dimension;
     static constexpr int dimWorld = GridView::dimensionworld;
@@ -194,6 +196,40 @@ public:
             }
             else if (scenario_ == Scenario::hyperbolic_evaporation)
                 DUNE_THROW(Dune::NotImplemented, "Scenario::hyperbolic_evaporation");
+
+            else if (scenario_ == Scenario::heart)
+            {
+                const auto strengths = getParam<std::vector<Scalar>>("BoundaryConditions.PointSourcesStrength");
+                const auto positions = getParam<std::vector<Scalar>>("BoundaryConditions.PointSourcePositions");
+                std::vector<std::pair<Scalar, GlobalPosition>> pointSourceCandidates;
+                for (int i = 0; i < strengths.size(); ++i)
+                    pointSourceCandidates.push_back(std::make_pair(strengths[i], GlobalPosition{positions[3*i], positions[3*i + 1], positions[3*i + 2]} ));
+
+                for (const auto& p : pointSourceCandidates)
+                {
+                    const auto [dist, eIdx] = closestEntity(p.second, this->gridGeometry().boundingBoxTree(), 0.1*0.1);
+                    if (eIdx != 0)
+                    {
+                        const auto rank = this->gridGeometry().gridView().comm().rank();
+                        std::cout << "Added point source on rank " << rank << " at position " << p.second << " on element " << eIdx << "\n";
+                        pointSources_.push_back(std::make_pair(eIdx, p.first));
+                    }
+                }
+
+                const auto totalStrength = std::accumulate(strengths.begin(), strengths.end(), 0.0);
+                const auto totalArea = [&]{
+                    Scalar area = 0.0;
+                    for (const auto& element : elements(this->gridGeometry().gridView(), Dune::Partitions::interior))
+                        area += element.geometry().volume();
+                    area = this->gridGeometry().gridView().comm().sum(area);
+                    return area;
+                }();
+
+                inflowRatePerArea_ = 0.0;
+                outflowRatePerArea_ = 0.0;
+                evapRatePerAreaIn_ = 0.0;
+                evapRatePerVolume_ = totalStrength/totalArea;
+            }
         }
     }
 
@@ -254,11 +290,16 @@ public:
         return values;
     }
 
-    NumEqVector sourceAtPos(const GlobalPosition& globalPos) const
+    template<class ElementVolumeVariables>
+    NumEqVector source(const Element &element,
+                       const FVElementGeometry& fvGeometry,
+                       const ElementVolumeVariables& elemVolVars,
+                       const SubControlVolume &scv) const
     {
         if (isIntializationPhase_)
             return { 0.0, 0.0, 0.0 };
 
+        const auto& globalPos = scv.center();
         const auto rampFactor = std::min(1.0, 1.0/rampUpTime_*time_);
 
         // inflow_outflow and evaporation scenarios for 2D and 3D cubes
@@ -268,6 +309,13 @@ public:
         // surface geometries for 2D (in 3D) scenarios
         else if constexpr (dim == 2 && dimWorld == 3)
         {
+            if (scenario_ == Scenario::heart)
+            {
+                for (const auto& [eIdx, strength] : pointSources_)
+                    if (fvGeometry.elementIndex() == eIdx)
+                        return { strength/element.geometry().volume() - evapRatePerVolume_*rampFactor, 0.0, 0.0 };
+            }
+
             assert(heightSphericalCapIn_ > 0.0);
             if (globalPos[1] < this->gridGeometry().bBoxMin()[1] + heightSphericalCapIn_)
                 return { evapRatePerAreaIn_*rampFactor, 0.0, 0.0 };
@@ -337,6 +385,8 @@ private:
     Scalar fieldRelaxationRate_;
     Scalar solidDiffusivity_;
     Scalar fieldDiffusivity_;
+
+    std::vector<std::pair<std::size_t, Scalar>> pointSources_;
 
     bool isIntializationPhase_ = true;
 
