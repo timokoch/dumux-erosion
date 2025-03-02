@@ -268,14 +268,28 @@ public:
         // inflow_outflow and evaporation scenarios for 2D and 3D cubes
         if constexpr (dim == dimWorld)
         {
-            if (globalPos[1] < this->gridGeometry().bBoxMin()[1] + 1e-6 && globalPos[0] < inflowBottom_ && globalPos[0] > -inflowBottom_)
-                values[0] = -inflowRatePerArea_*rampFactor;
-            else if (onSide_(globalPos) && globalPos[1] < this->gridGeometry().bBoxMin()[1] + inflowSide_)
-                values[0] = -inflowRatePerArea_*rampFactor;
-            else if (globalPos[1] > this->gridGeometry().bBoxMax()[1] - 1e-6 && globalPos[0] < outflowTop_ && globalPos[0] > -outflowTop_)
-                values[0] = outflowRatePerArea_*rampFactor;
-            else if (onSide_(globalPos) && globalPos[1] > this->gridGeometry().bBoxMax()[1] - outflowSide_)
-                values[0] = outflowRatePerArea_*rampFactor;
+            if constexpr (dim == 2)
+            {
+                if (globalPos[1] < this->gridGeometry().bBoxMin()[1] + 1e-6 && globalPos[0] < inflowBottom_ && globalPos[0] > -inflowBottom_)
+                    values[0] = -inflowRatePerArea_*rampFactor;
+                else if (onSide_(globalPos) && globalPos[1] < this->gridGeometry().bBoxMin()[1] + inflowSide_)
+                    values[0] = -inflowRatePerArea_*rampFactor;
+                else if (globalPos[1] > this->gridGeometry().bBoxMax()[1] - 1e-6 && globalPos[0] < outflowTop_ && globalPos[0] > -outflowTop_)
+                    values[0] = outflowRatePerArea_*rampFactor;
+                else if (onSide_(globalPos) && globalPos[1] > this->gridGeometry().bBoxMax()[1] - outflowSide_)
+                    values[0] = outflowRatePerArea_*rampFactor;
+            }
+            if constexpr (dim == 3)
+            {
+                if (globalPos[dimWorld-1] < this->gridGeometry().bBoxMin()[dimWorld-1] + 1e-6 && globalPos[0] < inflowBottom_ && globalPos[0] > -inflowBottom_ && globalPos[dimWorld-2] < inflowBottom_ && globalPos[dimWorld-2] > -inflowBottom_)
+                    values[0] = -inflowRatePerArea_*rampFactor;
+                else if (onSide_(globalPos) && globalPos[dimWorld-1] < this->gridGeometry().bBoxMin()[dimWorld-1] + inflowSide_)
+                    values[0] = -inflowRatePerArea_*rampFactor;
+                else if (globalPos[dimWorld-1] > this->gridGeometry().bBoxMax()[dimWorld-1] - 1e-6 && globalPos[0] < outflowTop_ && globalPos[0] > -outflowTop_ && globalPos[dimWorld-2] < outflowTop_ && globalPos[dimWorld-2] > -outflowTop_)
+                    values[0] = outflowRatePerArea_*rampFactor;
+                else if (onSide_(globalPos) && globalPos[dimWorld-1] > this->gridGeometry().bBoxMax()[dimWorld-1] - outflowSide_)
+                    values[0] = outflowRatePerArea_*rampFactor;
+            }
         }
 
         // surface geometries for 2D (in 3D) scenarios
