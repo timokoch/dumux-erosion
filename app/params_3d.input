@@ -20,7 +20,7 @@ FluidCompressibility = 1e-4
 SolidDiffusivity = 0.0
 FieldDiffusivity = 0.008
 FieldRelaxationRate = 0.01
-InitialStddev = 0.2
+InitialStddev = 0.3
 
 [BoundaryConditions]
 RampUpTime = 10.0s
@@ -33,7 +33,6 @@ OutflowLength = 5.0
 MaxIterations = 2000
 Preconditioner.ILUOrder = 0
 Preconditioner.Iterations = 1
-MaxIterations = 20
 
 [Newton]
 EnablePartialReassembly = true
