@@ -30,7 +30,9 @@ InflowLength = 0.2
 OutflowLength = 5.0
 
 [LinearSolver]
-Preconditioner.AmgAccumulationMode = AtOnce
+MaxIterations = 2000
+Preconditioner.ILUOrder = 0
+Preconditioner.Iterations = 1
 MaxIterations = 20
 
 [Newton]

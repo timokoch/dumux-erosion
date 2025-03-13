@@ -166,7 +166,7 @@ int main(int argc, char** argv)
     timeLoop->setMaxTimeStepSize(0.1);
 
     using Assembler = FVAssembler<TypeTag, DiffMethod::numeric>;
-    using LinearSolver = AMGBiCGSTABIstlSolver<LinearSolverTraits<GridGeometry>, LinearAlgebraTraitsFromAssembler<Assembler>>;
+    using LinearSolver = ILUBiCGSTABIstlSolver<LinearSolverTraits<GridGeometry>, LinearAlgebraTraitsFromAssembler<Assembler>>;
     using Solver = Dumux::NewtonSolver<Assembler, LinearSolver>;
 
     auto oldSol = sol;

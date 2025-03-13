@@ -36,8 +36,11 @@ PointSourcesStrength = 5 5
 PointSourcePositions = -14.6428 21.1399 37.5829 -23.9962 9.63808 23.1206
 
 [LinearSolver]
-Preconditioner.AmgAccumulationMode = AtOnce
-MaxIterations = 20
+MaxIterations = 2000
+Preconditioner.ILUOrder = 0
+Preconditioner.Iterations = 1
+Verbosity = 1
+ResidualReduction = 1e-6
 
 [Newton]
 EnablePartialReassembly = true
