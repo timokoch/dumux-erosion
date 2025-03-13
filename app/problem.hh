@@ -151,48 +151,112 @@ public:
         {
             if (scenario_ == Scenario::half_sphere_boundary)
             {
-                const auto r = 5.0;
-                const auto a = r*std::sin(M_PI/6.0);
-                const auto outflowRingArea = 2*M_PI*a;
-                inflowRatePerArea_ = 0.0;
-                outflowRatePerArea_ = flowRate/outflowRingArea;
+                heightSphericalCapIn_ = 0.025;
+                auto fvGeometry = localView(this->gridGeometry());
+                Scalar areaSphericalCapInflow = 0.0, areaRingOutflow = 0.0;
+                for (const auto& element : elements(this->gridGeometry().gridView(), Dune::Partitions::interior))
+                {
+                    fvGeometry.bindElement(element);
+                    for (const auto& scv : scvs(fvGeometry))
+                    {
+                        if (scv.center()[1] < this->gridGeometry().bBoxMin()[1] + heightSphericalCapIn_)
+                            areaSphericalCapInflow += scv.volume();
+                    }
 
-                heightSphericalCapIn_ = 0.1;
-                const auto areaSpehricalCap = 2.0*M_PI*heightSphericalCapIn_*r;
-                evapRatePerAreaIn_ = flowRate/areaSpehricalCap;
+                    for (const auto& scvf : scvfs(fvGeometry))
+                    {
+                        if (scvf.boundary() && scvf.center()[1] > this->gridGeometry().bBoxMax()[1] - eps_)
+                            areaRingOutflow += scvf.area();
+                    }
+                }
+
+                areaSphericalCapInflow = this->gridGeometry().gridView().comm().sum(areaSphericalCapInflow);
+                areaRingOutflow = this->gridGeometry().gridView().comm().sum(areaRingOutflow);
+
+                inflowRatePerArea_ = 0.0;
+                outflowRatePerArea_ = flowRate/areaRingOutflow;
+                evapRatePerAreaIn_ = flowRate/areaSphericalCapInflow;
+                evapRatePerAreaOut_ = 0.0;
                 evapRatePerVolume_ = 0.0;
             }
             else if (scenario_ == Scenario::retina)
             {
-                const auto r = 5.0;
-                const auto h = r*(1.0 - std::cos(M_PI/6.0));
-                const auto outflowMissingSphericalCap = 2.0*M_PI*h*r;
+                heightSphericalCapIn_ = 0.025;
+                auto fvGeometry = localView(this->gridGeometry());
+                Scalar areaSphericalCapInflow = 0.0, totalArea = 0.0;
+                for (const auto& element : elements(this->gridGeometry().gridView(), Dune::Partitions::interior))
+                {
+                    fvGeometry.bindElement(element);
+                    for (const auto& scv : scvs(fvGeometry))
+                    {
+                        if (scv.center()[1] < this->gridGeometry().bBoxMin()[1] + heightSphericalCapIn_)
+                            areaSphericalCapInflow += scv.volume();
+                        totalArea += scv.volume();
+                    }
+                }
+
+                areaSphericalCapInflow = this->gridGeometry().gridView().comm().sum(areaSphericalCapInflow);
+                totalArea = this->gridGeometry().gridView().comm().sum(totalArea);
 
                 inflowRatePerArea_ = 0.0;
                 outflowRatePerArea_ = 0.0;
-                heightSphericalCapIn_ = 0.1;
-                const auto areaSpehricalCap = 2.0*M_PI*heightSphericalCapIn_*r;
-                const auto sphereArea = 4.0*M_PI*r*r;
-                evapRatePerAreaIn_ = flowRate/areaSpehricalCap;
-                evapRatePerVolume_ = flowRate/(sphereArea - outflowMissingSphericalCap);
+                evapRatePerAreaIn_ = flowRate/areaSphericalCapInflow;
+                evapRatePerAreaOut_ = 0.0;
+                evapRatePerVolume_ = flowRate/totalArea;
             }
             else if (scenario_ == Scenario::sphere_symmetric)
             {
-                const auto r = 5.0;
-                heightSphericalCapIn_ = 0.1;
-                const auto areaSpehricalCap = 2.0*M_PI*heightSphericalCapIn_*r;
+                heightSphericalCapIn_ = 0.025;
+                auto fvGeometry = localView(this->gridGeometry());
+                Scalar areaSphericalCapInflow = 0.0, areaSphericalCapOutflow = 0.0;
+                for (const auto& element : elements(this->gridGeometry().gridView(), Dune::Partitions::interior))
+                {
+                    fvGeometry.bindElement(element);
+                    for (const auto& scv : scvs(fvGeometry))
+                    {
+                        if (scv.center()[1] < this->gridGeometry().bBoxMin()[1] + heightSphericalCapIn_)
+                            areaSphericalCapInflow += scv.volume();
+                        if (scv.center()[1] > this->gridGeometry().bBoxMax()[1] - heightSphericalCapIn_)
+                            areaSphericalCapOutflow += scv.volume();
+                    }
+                }
 
-                inflowRatePerArea_ = flowRate/areaSpehricalCap;
-                outflowRatePerArea_ = flowRate/areaSpehricalCap;
-                evapRatePerAreaIn_ = 0.0;
+                areaSphericalCapInflow = this->gridGeometry().gridView().comm().sum(areaSphericalCapInflow);
+                areaSphericalCapOutflow = this->gridGeometry().gridView().comm().sum(areaSphericalCapOutflow);
+
+                inflowRatePerArea_ = 0.0;
+                outflowRatePerArea_ = 0.0;
+                evapRatePerAreaIn_ = flowRate/areaSphericalCapInflow;
+                evapRatePerAreaOut_ = flowRate/areaSphericalCapOutflow;
                 evapRatePerVolume_ = 0.0;
             }
             else if (scenario_ == Scenario::hyperbolic_symmetric)
             {
-                const auto r = 5.0;
-                const auto ringArea = 2.0*M_PI*r;
-                inflowRatePerArea_ = flowRate/ringArea;
-                outflowRatePerArea_ = flowRate/ringArea;
+                Scalar inflowRingArea = 0.0, outflowRingArea = 0.0;
+                auto fvGeometry = localView(this->gridGeometry());
+                for (const auto& element : elements(this->gridGeometry().gridView(), Dune::Partitions::interior))
+                {
+                    fvGeometry.bindElement(element);
+                    for (const auto& scvf : scvfs(fvGeometry))
+                    {
+                        if (scvf.boundary())
+                        {
+                            if (scvf.ipGlobal()[1] < this->gridGeometry().bBoxMin()[1] + 1e-6)
+                                inflowRingArea += scvf.area();
+                            if (scvf.ipGlobal()[1] > this->gridGeometry().bBoxMax()[1] - 1e-6)
+                                outflowRingArea += scvf.area();
+                        }
+                    }
+                }
+
+                inflowRingArea = this->gridGeometry().gridView().comm().sum(inflowRingArea);
+                outflowRingArea = this->gridGeometry().gridView().comm().sum(outflowRingArea);
+
+                inflowRatePerArea_ = flowRate/inflowRingArea;
+                outflowRatePerArea_ = flowRate/outflowRingArea;
+                evapRatePerAreaIn_ = 0.0;
+                evapRatePerAreaOut_ = 0.0;
+                evapRatePerVolume_ = 0.0;
             }
             else if (scenario_ == Scenario::hyperbolic_evaporation)
                 DUNE_THROW(Dune::NotImplemented, "Scenario::hyperbolic_evaporation");
@@ -328,13 +392,20 @@ public:
                 for (const auto& [eIdx, strength] : pointSources_)
                     if (fvGeometry.elementIndex() == eIdx)
                         return { rampFactor*(strength/element.geometry().volume() - evapRatePerVolume_), 0.0, 0.0 };
+
+                return { -evapRatePerVolume_*rampFactor, 0.0, 0.0 };
             }
 
             assert(heightSphericalCapIn_ > 0.0);
-            if (globalPos[1] < this->gridGeometry().bBoxMin()[1] + heightSphericalCapIn_)
-                return { evapRatePerAreaIn_*rampFactor, 0.0, 0.0 };
-            else
-                return { -evapRatePerVolume_*rampFactor, 0.0, 0.0 };
+            if (scenario_ == Scenario::sphere_symmetric || scenario_ == Scenario::retina || scenario_ == Scenario::half_sphere_boundary)
+                if (globalPos[1] < this->gridGeometry().bBoxMin()[1] + heightSphericalCapIn_)
+                    return { (evapRatePerAreaIn_-evapRatePerVolume_)*rampFactor, 0.0, 0.0 };
+
+            if (scenario_ == Scenario::sphere_symmetric)
+                if (globalPos[1] > this->gridGeometry().bBoxMax()[1] - heightSphericalCapIn_)
+                    return { (-evapRatePerAreaOut_-evapRatePerVolume_)*rampFactor, 0.0, 0.0 };
+
+            return { -evapRatePerVolume_*rampFactor, 0.0, 0.0 };
         }
     }
 
@@ -387,6 +458,7 @@ private:
     Scalar outflowRatePerArea_, outflowTop_, outflowSide_;
     Scalar evapRatePerVolume_;
     Scalar evapRatePerAreaIn_ = 0.0;
+    Scalar evapRatePerAreaOut_ = 0.0;
     Scalar heightSphericalCapIn_ = 0.0;
 
     GlobalPosition domainSize_;
