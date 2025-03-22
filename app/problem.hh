@@ -42,9 +42,11 @@ class PorousMediaErosionTestProblem : public FVProblem<TypeTag>
         hyperbolic_symmetric, hyperbolic_evaporation,
         half_sphere_boundary, retina,
         sphere_symmetric,
+        torus_symmetric, torus_evaporation,
         heart,
         rectangular_inflow_outflow, rectangular_evaporation,
-        cuboid_inflow_outflow, cuboid_evaporation
+        cuboid_inflow_outflow, cuboid_evaporation,
+        wavy_surface_inflow_outflow, wavy_surface_evaporation
     };
 
 public:
@@ -74,10 +76,14 @@ public:
                     return evaporation ? Scenario::retina : Scenario::half_sphere_boundary;
                 else if (msh.find("sphere") != std::string::npos)
                     return Scenario::sphere_symmetric;
+                else if (msh.find("torus") != std::string::npos)
+                    return evaporation ? Scenario::torus_evaporation : Scenario::torus_symmetric;
                 else if (msh.find("hyperbolic") != std::string::npos)
                     return evaporation ? Scenario::hyperbolic_evaporation : Scenario::hyperbolic_symmetric;
                 else if (msh.find("heart") != std::string::npos)
                     return Scenario::heart;
+                else if (msh.find("surface") != std::string::npos)
+                    return evaporation ? Scenario::wavy_surface_evaporation : Scenario::wavy_surface_inflow_outflow;
             }
             else if (dim == 2)
             {
@@ -179,32 +185,63 @@ public:
                 evapRatePerAreaOut_ = 0.0;
                 evapRatePerVolume_ = 0.0;
             }
-            else if (scenario_ == Scenario::retina)
+            else if (scenario_ == Scenario::wavy_surface_inflow_outflow)
             {
-                heightSphericalCapIn_ = 0.025;
+                Scalar inflowCurveArea = 0.0, outflowCurveArea = 0.0;
                 auto fvGeometry = localView(this->gridGeometry());
-                Scalar areaSphericalCapInflow = 0.0, totalArea = 0.0;
                 for (const auto& element : elements(this->gridGeometry().gridView(), Dune::Partitions::interior))
                 {
                     fvGeometry.bindElement(element);
-                    for (const auto& scv : scvs(fvGeometry))
+                    for (const auto& scvf : scvfs(fvGeometry))
                     {
-                        if (scv.center()[1] < this->gridGeometry().bBoxMin()[1] + heightSphericalCapIn_)
-                            areaSphericalCapInflow += scv.volume();
-                        totalArea += scv.volume();
+                        if (scvf.boundary())
+                        {
+                            if (scvf.ipGlobal()[1] < this->gridGeometry().bBoxMin()[1] + 1e-6)
+                                inflowCurveArea += scvf.area();
+                            if (scvf.ipGlobal()[1] > this->gridGeometry().bBoxMax()[1] - 1e-6)
+                                outflowCurveArea += scvf.area();
+                        }
                     }
                 }
 
-                areaSphericalCapInflow = this->gridGeometry().gridView().comm().sum(areaSphericalCapInflow);
-                totalArea = this->gridGeometry().gridView().comm().sum(totalArea);
+                inflowCurveArea = this->gridGeometry().gridView().comm().sum(inflowCurveArea);
+                outflowCurveArea = this->gridGeometry().gridView().comm().sum(outflowCurveArea);
 
-                inflowRatePerArea_ = 0.0;
-                outflowRatePerArea_ = 0.0;
-                evapRatePerAreaIn_ = flowRate/areaSphericalCapInflow;
+                inflowRatePerArea_ = flowRate/inflowCurveArea;
+                outflowRatePerArea_ = flowRate/outflowCurveArea;
+                evapRatePerAreaIn_ = 0.0;
                 evapRatePerAreaOut_ = 0.0;
-                evapRatePerVolume_ = flowRate/totalArea;
+                evapRatePerVolume_ = 0.0;
             }
-            else if (scenario_ == Scenario::sphere_symmetric)
+            else if (scenario_ == Scenario::wavy_surface_evaporation)
+            {
+                Scalar inflowCurveArea = 0.0, evaporationArea = 0.0;
+                auto fvGeometry = localView(this->gridGeometry());
+                for (const auto& element : elements(this->gridGeometry().gridView(), Dune::Partitions::interior))
+                {
+                    fvGeometry.bindElement(element);
+                    for (const auto& scvf : scvfs(fvGeometry))
+                    {
+                        if (scvf.boundary())
+                        {
+                            if (scvf.ipGlobal()[1] < this->gridGeometry().bBoxMin()[1] + 1e-6)
+                                inflowCurveArea += scvf.area();
+                        }
+                    }
+
+                    evaporationArea += element.geometry().volume();
+                }
+
+                inflowCurveArea = this->gridGeometry().gridView().comm().sum(inflowCurveArea);
+                evaporationArea = this->gridGeometry().gridView().comm().sum(evaporationArea);
+
+                inflowRatePerArea_ = flowRate/inflowCurveArea;
+                outflowRatePerArea_ = 0.0;
+                evapRatePerAreaIn_ = 0.0;
+                evapRatePerAreaOut_ = 0.0;
+                evapRatePerVolume_ = flowRate/evaporationArea;
+            }
+            else if (scenario_ == Scenario::sphere_symmetric || scenario_ == Scenario::torus_symmetric)
             {
                 heightSphericalCapIn_ = 0.025;
                 auto fvGeometry = localView(this->gridGeometry());
@@ -261,7 +298,7 @@ public:
             else if (scenario_ == Scenario::hyperbolic_evaporation)
                 DUNE_THROW(Dune::NotImplemented, "Scenario::hyperbolic_evaporation");
 
-            else if (scenario_ == Scenario::heart)
+            else if (scenario_ == Scenario::heart || scenario_ == Scenario::torus_evaporation || scenario_ == Scenario::retina)
             {
                 const auto strengths = getParam<std::vector<Scalar>>("BoundaryConditions.PointSourcesStrength");
                 const auto positions = getParam<std::vector<Scalar>>("BoundaryConditions.PointSourcePositions");
@@ -271,12 +308,17 @@ public:
 
                 for (const auto& p : pointSourceCandidates)
                 {
-                    const auto [dist, eIdx] = closestEntity(p.second, this->gridGeometry().boundingBoxTree(), 0.1*0.1);
-                    if (eIdx != 0)
+                    const auto [dist, eIdx] = closestEntity(p.second, this->gridGeometry().boundingBoxTree(), 0.05*0.05);
+                    const int found = static_cast<int>(eIdx != 0);
+                    const int totalFound = this->gridGeometry().gridView().comm().sum(found);
+                    if (found)
                     {
-                        const auto rank = this->gridGeometry().gridView().comm().rank();
-                        std::cout << "Added point source on rank " << rank << " at position " << p.second << " on element " << eIdx << "\n";
-                        pointSources_.push_back(std::make_pair(eIdx, p.first));
+                        if (this->gridGeometry().element(eIdx).partitionType() == Dune::PartitionType::InteriorEntity)
+                        {
+                            const auto rank = this->gridGeometry().gridView().comm().rank();
+                            std::cout << "Added point source on rank " << rank << " at position " << p.second << " on element " << eIdx << "\n";
+                            pointSources_.push_back(std::make_pair(eIdx, p.first/static_cast<double>(totalFound)));
+                        }
                     }
                 }
 
@@ -294,6 +336,9 @@ public:
                 evapRatePerAreaIn_ = 0.0;
                 evapRatePerVolume_ = totalStrength/totalArea;
             }
+
+            else
+                DUNE_THROW(Dune::NotImplemented, "Unknown scenario");
         }
     }
 
@@ -387,7 +432,7 @@ public:
         // surface geometries for 2D (in 3D) scenarios
         else if constexpr (dim == 2 && dimWorld == 3)
         {
-            if (scenario_ == Scenario::heart)
+            if (scenario_ == Scenario::heart || scenario_ == Scenario::torus_evaporation || scenario_ == Scenario::retina)
             {
                 for (const auto& [eIdx, strength] : pointSources_)
                     if (fvGeometry.elementIndex() == eIdx)
@@ -397,11 +442,11 @@ public:
             }
 
             assert(heightSphericalCapIn_ > 0.0);
-            if (scenario_ == Scenario::sphere_symmetric || scenario_ == Scenario::retina || scenario_ == Scenario::half_sphere_boundary)
+            if (scenario_ == Scenario::sphere_symmetric || scenario_ == Scenario::torus_symmetric || scenario_ == Scenario::half_sphere_boundary)
                 if (globalPos[1] < this->gridGeometry().bBoxMin()[1] + heightSphericalCapIn_)
                     return { (evapRatePerAreaIn_-evapRatePerVolume_)*rampFactor, 0.0, 0.0 };
 
-            if (scenario_ == Scenario::sphere_symmetric)
+            if (scenario_ == Scenario::sphere_symmetric || scenario_ == Scenario::torus_symmetric)
                 if (globalPos[1] > this->gridGeometry().bBoxMax()[1] - heightSphericalCapIn_)
                     return { (-evapRatePerAreaOut_-evapRatePerVolume_)*rampFactor, 0.0, 0.0 };
 

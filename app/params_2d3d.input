@@ -4,36 +4,46 @@ InitialTimeStepSize = 0.1s
 MaxTimeStepSize = 10s
 
 [Grid]
-#File = halfsphere.msh
-File = sphere.msh
+File = halfsphere.msh
+#File = sphere.msh
 #File = hyperbolic.msh
 #File = ../../data/heart.msh
+#File = surface.msh
+#File = surface_2.msh
+#File = torus.msh
 
 [Problem]
 #Name = hyperbolic_symmetric
 #Name = hyperbolic_evaporation
 #Name = half_sphere_boundary
-#Name = retina
-Name = sphere_symmetric
+Name = retina
+#Name = sphere_symmetric
 #Name = heart4
+#Name = surface
+#Name = surface_2
+#Name = torus_evaporation
 
 [ModelParameters]
 Omega = 8.0
 PhiStar = 0.8
-CorrelationLength = 0.1
+CorrelationLength = 0.05
 #CorrelationLength = 0.8 # heart
 FluidCompressibility = 1e-4
-FieldDiffusivity = 0.002
+FieldDiffusivity = 0.005
 #FieldDiffusivity = 0.4 # heart
 FieldRelaxationRate = 0.01
-InitialStddev = 0.3
+InitialStddev = 0.2
 
 [BoundaryConditions]
-RampUpTime = 10.0s
-Evaporation = false
-FlowRate = 1.0
+RampUpTime = 20.0s
+Evaporation = true
+FlowRate = 0.4
 #PointSourcesStrength = 4 4 # heart
 #PointSourcePositions = -14.6428 21.1399 37.5829 -23.9962 9.63808 23.1206 # heart
+#PointSourcesStrength = 1.0 # torus
+#PointSourcePositions = 0.0 -5.0 0.0 # torus
+PointSourcesStrength = 0.4 # retina
+PointSourcePositions = -0.86824088833 -4.92403876506 0.0 # retina
 
 [LinearSolver]
 MaxIterations = 2000
