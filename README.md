@@ -24,8 +24,8 @@ Installation
 Requirements
 --------------
 
-* cmake >= 3.13
-* C++17 compliant compiler (e.g g++ >= 8 or clang >= 6)
+* cmake >= 3.22
+* C++20 compliant compiler (e.g g++ >= 11 or clang >= 14)
 * pkg-config
 
 Setup
