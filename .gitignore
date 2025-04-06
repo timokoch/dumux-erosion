@@ -63,3 +63,11 @@ MANIFEST
 _skbuild/
 dist
 *.egg-info
+
+# mesh files
+*.msh
+*.vtk
+*.vtu
+*.stl
+data/data/parameters.json
+data/vtk

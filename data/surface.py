@@ -13,7 +13,11 @@ SURFACES = {
     "surface_4.msh": "0.1*Sin(sqrt((5*(u-2.5))^2+(5*v)^2)) + 0.1*Sin(sqrt((5*(u+2.5))^2+(5*v)^2))"
 }
 
-surface = "surface.msh"
+surface = sys.argv[1] if len(sys.argv) > 1 else "surface.msh"
+if surface not in SURFACES:
+    print(f"Usage: {sys.argv[0]} <surface.msh>")
+    print(f"Available surfaces: {', '.join(SURFACES.keys())}")
+    sys.exit(1)
 
 g=gmsh.model.geo.addGeometry("ParametricSurface", strings=["u", "v", SURFACES[surface]])
 

@@ -2,6 +2,7 @@
 
 import subprocess
 import click
+import os
 
 SCENARIOS = {
     "retina": {
@@ -93,13 +94,14 @@ SCENARIOS.update(_more_scenarios)
 
 @click.command()
 @click.argument("scenario", type=click.Choice(SCENARIOS.keys()), required=True)
-def run_scenario(scenario):
+@click.option("-p", "--num_processes", type=int, default=8)
+def run_scenario(scenario, num_processes):
     s = SCENARIOS[scenario]
-    command = ["mpirun", "-np", "8", s["Executable"], s["ParameterFile"]]
+    command = ["mpirun", "-np", f"{num_processes}", s["Executable"], s["ParameterFile"]]
     params = s.get("Parameters", {})
     for k, v in params.items():
         command.extend([f"-{k}", v])
-    subprocess.run(command)
+    subprocess.run(command, env=dict(os.environment, OMP_NUM_THREADS=1))
 
 if __name__ == "__main__":
     run_scenario()
