@@ -4,9 +4,9 @@ InitialTimeStepSize = 0.1s
 MaxTimeStepSize = 10s
 
 [Grid]
-LowerLeft = -5 -40
-UpperRight = 5 40
-Cells = 100 800
+LowerLeft = -5 -5
+UpperRight = 5 5
+Cells = 100 100
 Overlap = 2
 
 [Problem]
@@ -18,18 +18,18 @@ PhiStar = 0.8
 CorrelationLength = 0.15
 FluidCompressibility = 1e-4
 SolidDiffusivity = 0.0
-FieldDiffusivity = 0.004
+FieldDiffusivity = 0.008
 FieldRelaxationRate = 0.01
 InitialStddev = 0.3
 
 [BoundaryConditions]
 RampUpTime = 10.0s
 Evaporation = false
-FlowRate = 0.2
-InflowLength = 0.05
-OutflowLength = 0.05
-#LensLowerLeft = -3.0 -0.5
-#LensUpperRight = 3.0 0.5
+FlowRate = 0.4
+InflowLength = 0.1
+OutflowLength = 10.0
+ObstacleType = None
+JsonObstacleFile = "obstacles_2d.json"
 
 [LinearSolver]
 MaxIterations = 2000
