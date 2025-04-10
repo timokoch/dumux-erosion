@@ -10,7 +10,7 @@ Cells = 100 100
 Overlap = 2
 
 [Problem]
-Name = erosion_2d_long2
+Name = erosion_2d
 
 [ModelParameters]
 Omega = 8.0
@@ -18,14 +18,14 @@ PhiStar = 0.8
 CorrelationLength = 0.15
 FluidCompressibility = 1e-4
 SolidDiffusivity = 0.0
-FieldDiffusivity = 0.008
+FieldDiffusivity = 0.01
 FieldRelaxationRate = 0.01
 InitialStddev = 0.3
 
 [BoundaryConditions]
 RampUpTime = 10.0s
 Evaporation = false
-FlowRate = 0.4
+FlowRate = 0.2
 InflowLength = 0.1
 OutflowLength = 10.0
 ObstacleType = None
