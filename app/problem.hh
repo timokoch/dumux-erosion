@@ -7,12 +7,77 @@
 #ifndef DUMUX_POROUS_MEDIA_EROSION_MODEL_PROBLEM_HH
 #define DUMUX_POROUS_MEDIA_EROSION_MODEL_PROBLEM_HH
 
+#include <vector>
+#include <string>
+#include <utility>
+#include <fstream>
+#include <algorithm>
+#include <functional>
+#include <array>
+#include <cmath>
+#include <iostream>
+#include <concepts>
+
 #include <dumux/common/numeqvector.hh>
 #include <dumux/common/boundarytypes.hh>
 #include <dumux/common/fvproblem.hh>
 #include <dumux/common/properties.hh>
 #include <dumux/common/parameters.hh>
 #include <dumux/geometry/distance.hh>
+
+#include <dumux/io/json.hh>
+
+namespace Dumux {
+
+template<class Scalar, int dimWorld>
+class Obstacles {
+    using GlobalPosition = Dune::FieldVector<Scalar, dimWorld>;
+public:
+    Obstacles() = default;
+
+    template<class T>
+    requires std::predicate<T, GlobalPosition>
+    void addObstacle(T&& t)
+    { obstacles_.emplace_back(std::forward<T>(t)); }
+
+    bool inside(const GlobalPosition& point) const {
+        return std::any_of(obstacles_.begin(), obstacles_.end(),
+            [&](const auto& query) { return query(point); }
+        );
+    }
+
+    std::vector<std::function<bool(const GlobalPosition&)>> obstacles_;
+};
+
+} // end namespace Dumux
+
+namespace Dumux::Obstacle {
+
+template<class Scalar, int dimWorld>
+void addBall(const Dune::FieldVector<Scalar, dimWorld>& center,
+             Scalar radius,
+             Obstacles<Scalar, dimWorld>& obstacles)
+{
+    obstacles.addObstacle([=](const auto& point){
+        const auto dist2 = (center-point).two_norm2();
+        return dist2 <= radius*radius;
+    });
+}
+
+template<class Scalar, int dimWorld>
+void addBox(const Dune::FieldVector<Scalar, dimWorld>& lowerLeft,
+            const Dune::FieldVector<Scalar, dimWorld>& upperRight,
+            Obstacles<Scalar, dimWorld>& obstacles)
+{
+    obstacles.addObstacle([=](const auto& point){
+        for (int i = 0; i < dimWorld; ++i)
+            if (point[i] < lowerLeft[i] + 1e-7 || point[i] > upperRight[i] - 1e-7)
+                return false;
+        return true;
+    });
+}
+
+} // end namespace Dumux::Obstacle
 
 namespace Dumux {
 
@@ -53,9 +118,46 @@ public:
     PorousMediaErosionTestProblem(std::shared_ptr<const GridGeometry> gridGeometry)
     : ParentType(gridGeometry)
     {
-        // lens
-        lensLowerLeft_ = getParam<GlobalPosition>("BoundaryConditions.LensLowerLeft", GlobalPosition(-101.0));
-        lensUpperRight_ = getParam<GlobalPosition>("BoundaryConditions.LensUpperRight", GlobalPosition(-100.0));
+        // obstacles
+        obstaclePermeability_ = 1e-6;
+        const auto obstacleType = getParam<std::string>("BoundaryConditions.ObstacleType", "None");
+        if (obstacleType == "Ball")
+        {
+            const auto center = getParam<GlobalPosition>("BoundaryConditions.BallObstacleCenter");
+            const auto radius = getParam<Scalar>("BoundaryConditions.BallObstacleRadius");
+            Obstacle::addBall(center, radius, obstacles_);
+        }
+        else if (obstacleType == "Box")
+        {
+            const auto lowerLeft = getParam<GlobalPosition>("BoundaryConditions.BoxObstacleLowerLeft");
+            const auto upperRight = getParam<GlobalPosition>("BoundaryConditions.BoxUpperRight");
+            Obstacle::addBox(lowerLeft, upperRight, obstacles_);
+        }
+        else if (obstacleType == "Json")
+        {
+            const auto filename = getParam<std::string>("BoundaryConditions.JsonObstacleFile");
+            auto data = Json::JsonTree::parse(std::ifstream{filename});
+            for (const auto& obstacle : data)
+            {
+                const auto type = obstacle["type"].template get<std::string>();
+                if (type == "Ball")
+                {
+                    const auto center = obstacle["center"].template get<GlobalPosition>();
+                    const auto radius = obstacle["radius"].template get<Scalar>();
+                    Obstacle::addBall(center, radius, obstacles_);
+                }
+                else if (type == "Box")
+                {
+                    const auto lowerLeft = obstacle["lower_left"].template get<GlobalPosition>();
+                    const auto upperRight = obstacle["upper_right"].template get<GlobalPosition>();
+                    Obstacle::addBox(lowerLeft, upperRight, obstacles_);
+                }
+            }
+        }
+        else if (obstacleType != "None")
+        {
+            DUNE_THROW(Dune::NotImplemented, "Unknown obstacle type: " << obstacleType);
+        }
 
         // model parameters
         fluidCompressibility_ = getParam<Scalar>("ModelParameters.FluidCompressibility");
@@ -456,13 +558,15 @@ public:
 
     Scalar permeability(const GlobalPosition& globalPos, const Scalar porosity) const
     {
-        const auto permeabilityFactor = inLens(globalPos) ? eps_ : 1.0;
+        if (insideObstacle(globalPos))
+            return obstaclePermeability_;
+
         const auto solidFraction = 1.0 - porosity;
-        return permeabilityFactor*porosity*porosity*porosity/(solidFraction*solidFraction); // Kozeny-Carman
+        return porosity*porosity*porosity/(solidFraction*solidFraction); // Kozeny-Carman
     }
 
     Scalar erosionRateFactor(const GlobalPosition& globalPos) const
-    { return inLens(globalPos) ? 0.0 : 1.0; }
+    { return insideObstacle(globalPos) ? 0.0 : 1.0; }
 
     Scalar fluidCompressibility() const { return fluidCompressibility_; }
     Scalar fieldRelaxationRate() const { return fieldRelaxationRate_; }
@@ -475,15 +579,9 @@ public:
     void setSolidDiffusivity(const Scalar D) { solidDiffusivity_ = D; }
     void setTime(Scalar time) { time_ = time; }
 
-    // lens occlusion
-    bool inLens(const GlobalPosition& globalPos) const
-    {
-        bool inLens = true;
-        for (int i = 0; i < dim; ++i)
-            inLens = inLens && globalPos[i] > lensLowerLeft_[i] - eps_
-                            && globalPos[i] < lensUpperRight_[i] + eps_;
-        return inLens;
-    }
+    // obstacle occlusion
+    bool insideObstacle(const GlobalPosition& globalPos) const
+    { return obstacles_.inside(globalPos); }
 
     // boundary conditions
     bool onSide_(const GlobalPosition& globalPos) const
@@ -508,14 +606,15 @@ private:
 
     GlobalPosition domainSize_;
 
-    GlobalPosition lensUpperRight_;
-    GlobalPosition lensLowerLeft_;
+    Obstacles<Scalar, dimWorld> obstacles_;
 
     // model parameters
     Scalar fluidCompressibility_;
     Scalar fieldRelaxationRate_;
     Scalar solidDiffusivity_;
     Scalar fieldDiffusivity_;
+
+    Scalar obstaclePermeability_;
 
     std::vector<std::pair<std::size_t, Scalar>> pointSources_;
 

@@ -23,6 +23,7 @@
 #include <dumux/io/chrono.hh>
 #include <dumux/io/gridwriter.hh>
 #include <dumux/io/grid/gridmanager_yasp.hh>
+#include <dumux/io/loadsolution.hh>
 
 #if HAVE_DUNE_ALUGRID
 #include <dumux/io/grid/gridmanager_alu.hh>
@@ -144,21 +145,37 @@ int main(int argc, char** argv)
     auto gridGeometry = std::make_shared<GridGeometry>(gridManager.grid().leafGridView());
     auto problem = std::make_shared<Problem>(gridGeometry);
     const auto initStddev = getParam<Scalar>("ModelParameters.InitialStddev", 0.1);
-    auto sol = createInitialSolution<SolutionVector>(*gridGeometry, initStddev);
+    const auto initialSolutionFile = getParam<std::string>("Problem.ReadInitialSolutionFrom", "");
+    SolutionVector sol = [&]{
+        if (initialSolutionFile.empty())
+            return createInitialSolution<SolutionVector>(*gridGeometry, initStddev);
+        else
+        {
+            SolutionVector sol(gridGeometry->numDofs());
+            loadSolution(sol, initialSolutionFile,
+                [](int pvIdx, int){
+                    constexpr std::array<std::string_view, 3> n{{"p", "phi", "g"}};
+                    return std::string{n[pvIdx]};
+                }, *gridGeometry
+            );
+            return sol;
+        }
+    }();
+
     auto gridVariables = std::make_shared<GridVariables>(problem, gridGeometry);
     gridVariables->init(sol);
 
-    std::vector<int> lensMarker(gridGeometry->gridView().size(0), 0);
+    std::vector<int> insideObstacle(gridGeometry->gridView().size(0), 0);
     for (const auto& element : elements(gridGeometry->gridView(), Dune::Partitions::interior))
-        if (problem->inLens(element.geometry().center()))
-            lensMarker[gridGeometry->elementMapper().index(element)] = 1;
+        if (problem->insideObstacle(element.geometry().center()))
+            insideObstacle[gridGeometry->elementMapper().index(element)] = 1;
 
     IO::OutputModule vtkWriter(OutputModuleTraits<Grid>::format, *gridVariables, sol, problem->name());
 
     vtkWriter.addVolumeVariable([](const auto& vv){ return vv.pressure(); }, "p");
     vtkWriter.addVolumeVariable([](const auto& vv){ return vv.solidity(); }, "phi");
     vtkWriter.addVolumeVariable([](const auto& vv){ return vv.g(); }, "g");
-    vtkWriter.addField(lensMarker, "obstacle");
+    vtkWriter.addField(insideObstacle, "obstacle");
 
     auto timeLoop = std::make_shared<CheckPointTimeLoop<Scalar>>(
         Chrono::toSeconds("-1.0s"), Chrono::toSeconds("0.1s"), Chrono::toSeconds(getParam("TimeLoop.TEnd"))
@@ -174,24 +191,40 @@ int main(int argc, char** argv)
     auto linearSolver = std::make_shared<LinearSolver>(gridGeometry->gridView(), gridGeometry->dofMapper());
     Solver solver(assembler, linearSolver);
 
-    // initialization phase idea: we start with a random field and then diffusive such that we get
-    // a Gaussian random field for the solidity to start with
-    const auto correlationLength = getParam<Scalar>("ModelParameters.CorrelationLength");
-    const auto D = correlationLength*correlationLength/(2.0*Grid::dimension); // Running diffusion for 1 time unit
     problem->startInitializationPhase();
-    problem->setSolidDiffusivity(D);
+    if (initialSolutionFile.empty())
+    {
+        // initialization phase idea: we start with a random field and then diffusive such that we get
+        // a Gaussian random field for the solidity to start with
+        const auto correlationLength = getParam<Scalar>("ModelParameters.CorrelationLength");
+        const auto D = correlationLength*correlationLength/(2.0*Grid::dimension); // Running diffusion for 1 time unit
+        problem->setSolidDiffusivity(D);
 
-    if (rank == 0)
-        std::cout << "\nStarting initialization phase with solid diffusivity " << problem->solidDiffusivity() << "\n" << std::endl;
+        if (rank == 0)
+            std::cout << "\nStarting initialization phase with solid diffusivity " << problem->solidDiffusivity() << "\n" << std::endl;
 
-    timeLoop->start(); do {
-        problem->setTime(timeLoop->time() + timeLoop->timeStepSize());
-        solver.solve(sol, *timeLoop);
-        oldSol = sol;
-        gridVariables->advanceTimeStep();
-        timeLoop->advanceTimeStep();
-        timeLoop->reportTimeStep();
-    } while (timeLoop->timeStepIndex() < 10);
+        timeLoop->start(); do {
+            problem->setTime(timeLoop->time() + timeLoop->timeStepSize());
+            solver.solve(sol, *timeLoop);
+            oldSol = sol;
+            gridVariables->advanceTimeStep();
+            timeLoop->advanceTimeStep();
+            timeLoop->reportTimeStep();
+        } while (timeLoop->timeStepIndex() < 10);
+
+        // re-initialize solution
+        for (int n = 0; n < sol.size(); ++n)
+        {
+            sol[n][0] = 0.0;
+            sol[n][2] = 0.8;
+        }
+    }
+    else
+    {
+        // re-initialize pressure
+        for (int n = 0; n < sol.size(); ++n)
+            sol[n][0] = 0.0;
+    }
 
     // re-initialize timeloop and problem
     timeLoop->setTime(0.0);
@@ -200,13 +233,6 @@ int main(int argc, char** argv)
     problem->stopInitializationPhase();
     problem->setSolidDiffusivity(getParam<Scalar>("ModelParameters.SolidDiffusivity", 0.0));
     timeLoop->setPeriodicCheckPoint(Chrono::toSeconds(getParam("TimeLoop.CheckPointPeriod", "2.0s")));
-
-    // re-initialize solution
-    for (int n = 0; n < sol.size(); ++n)
-    {
-        sol[n][0] = 0.0;
-        sol[n][2] = 0.8;
-    }
 
     oldSol = sol;
     gridVariables->init(sol);
