@@ -165,17 +165,17 @@ int main(int argc, char** argv)
     auto gridVariables = std::make_shared<GridVariables>(problem, gridGeometry);
     gridVariables->init(sol);
 
-    std::vector<int> lensMarker(gridGeometry->gridView().size(0), 0);
+    std::vector<int> insideObstacle(gridGeometry->gridView().size(0), 0);
     for (const auto& element : elements(gridGeometry->gridView(), Dune::Partitions::interior))
-        if (problem->inLens(element.geometry().center()))
-            lensMarker[gridGeometry->elementMapper().index(element)] = 1;
+        if (problem->insideObstacle(element.geometry().center()))
+            insideObstacle[gridGeometry->elementMapper().index(element)] = 1;
 
     IO::OutputModule vtkWriter(OutputModuleTraits<Grid>::format, *gridVariables, sol, problem->name());
 
     vtkWriter.addVolumeVariable([](const auto& vv){ return vv.pressure(); }, "p");
     vtkWriter.addVolumeVariable([](const auto& vv){ return vv.solidity(); }, "phi");
     vtkWriter.addVolumeVariable([](const auto& vv){ return vv.g(); }, "g");
-    vtkWriter.addField(lensMarker, "obstacle");
+    vtkWriter.addField(insideObstacle, "obstacle");
 
     auto timeLoop = std::make_shared<CheckPointTimeLoop<Scalar>>(
         Chrono::toSeconds("-1.0s"), Chrono::toSeconds("0.1s"), Chrono::toSeconds(getParam("TimeLoop.TEnd"))
