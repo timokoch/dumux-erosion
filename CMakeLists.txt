@@ -15,9 +15,11 @@ list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/modules"
 #include the dune macros
 include(DuneMacros)
 
+# set some dune cmake policies
 if(dune-common_VERSION VERSION_GREATER_EQUAL 2.11)
-  # activate global include-directories
-  dune_policy(SET DP_DEFAULT_INCLUDE_DIRS OLD)
+  dune_policy(SET DP_DEFAULT_INCLUDE_DIRS NEW)
+  dune_policy(SET DP_TEST_ADD_ALL_FLAGS NEW)
+  dune_policy(SET DP_SUGGESTED_MODULE_DEPENDENCIES_REQUIRED_DOWNSTREAM NEW)
 endif()
 
 # start a dune project with information from dune.module
