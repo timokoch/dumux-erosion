@@ -142,7 +142,6 @@ public:
     : ParentType(gridGeometry)
     {
         // obstacles
-        obstaclePermeability_ = 1.0;
         const auto obstacleType = getParam<std::string>("BoundaryConditions.ObstacleType", "None");
         if (obstacleType == "Ball")
         {
@@ -649,8 +648,6 @@ private:
     Scalar fieldRelaxationRate_;
     Scalar solidDiffusivity_;
     Scalar fieldDiffusivity_;
-
-    Scalar obstaclePermeability_;
 
     std::vector<std::pair<std::size_t, Scalar>> pointSources_;
 
