@@ -55,7 +55,7 @@ namespace Dumux::Obstacle {
 
 template<class Scalar, int dimWorld>
 void addBall(const Dune::FieldVector<Scalar, dimWorld>& center,
-             Scalar radius,
+             const Scalar radius,
              Obstacles<Scalar, dimWorld>& obstacles)
 {
     obstacles.addObstacle([=](const auto& point){
@@ -74,6 +74,29 @@ void addBox(const Dune::FieldVector<Scalar, dimWorld>& lowerLeft,
             if (point[i] < lowerLeft[i] + 1e-7 || point[i] > upperRight[i] - 1e-7)
                 return false;
         return true;
+    });
+}
+
+template<class Scalar, int dimWorld>
+void addCylinder(const Dune::FieldVector<Scalar, dimWorld>& lowerCenter,
+                 const Dune::FieldVector<Scalar, dimWorld>& upperCenter,
+                 const Scalar radius,
+                 Obstacles<Scalar, dimWorld>& obstacles)
+{
+    obstacles.addObstacle([=](const auto& point){
+        const auto sdf = [&]{
+            const auto ba = upperCenter - lowerCenter;
+            const auto pa = point - lowerCenter;
+            const Scalar baba = ba*ba;
+            const Scalar paba = pa*ba;
+            const Scalar x = (pa*baba - ba*paba).two_norm() - radius*baba;
+            const Scalar y = std::abs(paba-baba*0.5) - baba*0.5;
+            const Scalar x2 = x*x;
+            const Scalar y2 = y*y*baba;
+            const Scalar d = (std::max(x,y) < 0.0) ? -std::min(x2, y2) : (((x > 0.0) ? x2 : 0.0) + ((y > 0.0) ? y2 : 0.0));
+            return std::copysign(std::sqrt(std::abs(d))/baba, d);
+        }();
+        return sdf <= 0.0;
     });
 }
 
@@ -151,6 +174,17 @@ public:
                     const auto lowerLeft = obstacle["lower_left"].template get<GlobalPosition>();
                     const auto upperRight = obstacle["upper_right"].template get<GlobalPosition>();
                     Obstacle::addBox(lowerLeft, upperRight, obstacles_);
+                }
+                else if (type == "Cylinder")
+                {
+                    const auto lowerCenter = obstacle["lower_center"].template get<GlobalPosition>();
+                    const auto upperCenter = obstacle["upper_center"].template get<GlobalPosition>();
+                    const auto radius = obstacle["radius"].template get<Scalar>();
+                    Obstacle::addCylinder(lowerCenter, upperCenter, radius, obstacles_);
+                }
+                else
+                {
+                    DUNE_THROW(Dune::NotImplemented, "Unknown obstacle type: " << type);
                 }
             }
         }
