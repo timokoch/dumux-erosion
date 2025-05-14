@@ -1,10 +1,16 @@
 # SPDX-FileCopyrightInfo: Copyright © Timo Koch
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+file(GLOB MSH_FILES RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}" *.msh)
+file(GLOB INPUT_FILES RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}" *.input)
+file(GLOB JSON_INPUT_FILES RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}" *.json)
+message(STATUS "Found MSH_FILES: ${MSH_FILES}")
+message(STATUS "Found INPUT_FILES: ${INPUT_FILES}")
+message(STATUS "Found JSON_INPUT_FILES: ${JSON_INPUT_FILES}")
 dune_symlink_to_source_files(FILES
-  params.input params_3d.input params_2d3d.input
-  sphere.msh parabol.msh halfsphere.msh
-  surface.msh surface_2.msh surface_3.msh surface_4.msh torus.msh
+  ${MSH_FILES}
+  ${INPUT_FILES}
+  ${JSON_INPUT_FILES}
   run_scenario.py
 )
 
