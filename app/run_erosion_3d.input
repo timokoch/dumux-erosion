@@ -2,11 +2,12 @@
 TEnd = 50.0s
 InitialTimeStepSize = 0.1s
 MaxTimeStepSize = 10s
+CheckPointPeriod = 0.25s
 
 [Grid]
 LowerLeft = -5 -5 -5
 UpperRight = 5 5 5
-Cells = 150 150 150
+Cells = 20 20 20
 Overlap = 2
 
 [Problem]
@@ -28,6 +29,8 @@ Evaporation = false
 FlowRate = 0.8
 InflowLength = 0.2
 OutflowLength = 5.0
+ObstacleType = Json
+JsonObstacleFile = "obstacles_3d_disk.json"
 
 [LinearSolver]
 MaxIterations = 2000

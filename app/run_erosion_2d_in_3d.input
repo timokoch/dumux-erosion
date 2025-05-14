@@ -2,6 +2,7 @@
 TEnd = 50.0s
 InitialTimeStepSize = 0.1s
 MaxTimeStepSize = 10s
+CheckPointPeriod = 0.25s
 
 [Grid]
 File = halfsphere.msh

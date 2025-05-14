@@ -6,8 +6,8 @@ import os
 
 SCENARIOS = {
     "retina": {
-        "Executable": "test_erosion_md_2d_in_3d",
-        "ParameterFile": "params_2d3d.input",
+        "Executable": "run_erosion_2d_in_3d",
+        "ParameterFile": "run_erosion_2d_in_3d.input",
         "Parameters": {
             "Problem.Name": "retina",
             "Grid.File": "halfsphere.msh",
@@ -20,8 +20,8 @@ SCENARIOS = {
         },
     },
     "heart": {
-        "Executable": "test_erosion_md_2d_in_3d",
-        "ParameterFile": "params_2d3d.input",
+        "Executable": "run_erosion_2d_in_3d",
+        "ParameterFile": "run_erosion_2d_in_3d.input",
         "Parameters": {
             "Problem.Name": "heart",
             "Grid.File": "heart.msh",
@@ -34,8 +34,8 @@ SCENARIOS = {
         },
     },
     "surface1": {
-        "Executable": "test_erosion_md_2d_in_3d",
-        "ParameterFile": "params_2d3d.input",
+        "Executable": "run_erosion_2d_in_3d",
+        "ParameterFile": "run_erosion_2d_in_3d.input",
         "Parameters": {
             "Problem.Name": "surface",
             "Grid.File": "surface.msh",
@@ -46,8 +46,8 @@ SCENARIOS = {
         },
     },
     "surface2": {
-        "Executable": "test_erosion_md_2d_in_3d",
-        "ParameterFile": "params_2d3d.input",
+        "Executable": "run_erosion_2d_in_3d",
+        "ParameterFile": "run_erosion_2d_in_3d.input",
         "Parameters": {
             "Problem.Name": "surface2",
             "Grid.File": "surface_2.msh",
@@ -58,8 +58,8 @@ SCENARIOS = {
         },
     },
     "surface3": {
-        "Executable": "test_erosion_md_2d_in_3d",
-        "ParameterFile": "params_2d3d.input",
+        "Executable": "run_erosion_2d_in_3d",
+        "ParameterFile": "run_erosion_2d_in_3d.input",
         "Parameters": {
             "Problem.Name": "surface3",
             "Grid.File": "surface_3.msh",
@@ -70,8 +70,8 @@ SCENARIOS = {
         },
     },
     "surface4": {
-        "Executable": "test_erosion_md_2d_in_3d",
-        "ParameterFile": "params_2d3d.input",
+        "Executable": "run_erosion_2d_in_3d",
+        "ParameterFile": "run_erosion_2d_in_3d.input",
         "Parameters": {
             "Problem.Name": "surface4",
             "Grid.File": "surface_4.msh",
