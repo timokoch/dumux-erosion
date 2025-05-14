@@ -213,10 +213,22 @@ int main(int argc, char** argv)
         } while (timeLoop->timeStepIndex() < 10);
 
         // re-initialize solution
-        for (int n = 0; n < sol.size(); ++n)
+        const Scalar obtacleVolumeFraction = getParam<Scalar>("ModelParameters.ObstacleVolumeFraction", 0.8);
+        auto fvGeometry = localView(*gridGeometry);
+        for (const auto& element : elements(gridGeometry->gridView()))
         {
-            sol[n][0] = 0.0;
-            sol[n][2] = 0.8;
+            const auto eIdx = gridGeometry->elementMapper().index(element);
+            fvGeometry.bindElement(element);
+
+            for (const auto& scv : scvs(fvGeometry))
+            {
+                const auto dofIndex = scv.dofIndex();
+                if (insideObstacle[eIdx] == 1)
+                    sol[dofIndex][1] = obtacleVolumeFraction;
+
+                sol[dofIndex][0] = 0.0;
+                sol[dofIndex][2] = 0.8;
+            }
         }
     }
     else

@@ -119,7 +119,7 @@ public:
     : ParentType(gridGeometry)
     {
         // obstacles
-        obstaclePermeability_ = 1e-6;
+        obstaclePermeability_ = 1.0;
         const auto obstacleType = getParam<std::string>("BoundaryConditions.ObstacleType", "None");
         if (obstacleType == "Ball")
         {
@@ -428,7 +428,8 @@ public:
                 const auto totalArea = [&]{
                     Scalar area = 0.0;
                     for (const auto& element : elements(this->gridGeometry().gridView(), Dune::Partitions::interior))
-                        area += element.geometry().volume();
+                        if (const auto geo = element.geometry(); !insideObstacle(geo.center()))
+                            area += geo.volume();
                     area = this->gridGeometry().gridView().comm().sum(area);
                     return area;
                 }();
@@ -540,7 +541,10 @@ public:
                     if (fvGeometry.elementIndex() == eIdx)
                         return { rampFactor*(strength/element.geometry().volume() - evapRatePerVolume_), 0.0, 0.0 };
 
-                return { -evapRatePerVolume_*rampFactor, 0.0, 0.0 };
+                if (!insideObstacle(globalPos))
+                    return { -evapRatePerVolume_*rampFactor, 0.0, 0.0 };
+
+                return { 0.0, 0.0, 0.0 };
             }
 
             assert(heightSphericalCapIn_ > 0.0);
@@ -558,11 +562,9 @@ public:
 
     Scalar permeability(const GlobalPosition& globalPos, const Scalar porosity) const
     {
-        if (insideObstacle(globalPos))
-            return obstaclePermeability_;
-
-        const auto solidFraction = 1.0 - porosity;
-        return porosity*porosity*porosity/(solidFraction*solidFraction); // Kozeny-Carman
+        const auto poro = std::max(porosity, 1e-2);
+        const auto solidFraction = 1.0 - poro;
+        return poro*poro*poro/(solidFraction*solidFraction); // Kozeny-Carman
     }
 
     Scalar erosionRateFactor(const GlobalPosition& globalPos) const
