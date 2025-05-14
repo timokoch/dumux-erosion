@@ -1,0 +1,12 @@
+[
+    {
+        "type": "Box",
+        "lower_left": [-4.5, -0.2],
+        "upper_right": [4.5, 0.2]
+    },
+    {
+        "type": "Ball",
+        "center": [0.0, -2.0],
+        "radius": 1.0
+    }
+]
