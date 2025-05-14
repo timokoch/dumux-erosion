@@ -46,8 +46,13 @@ SCENARIOS = {
             "BoundaryConditions.Evaporation": "false",
             "BoundaryConditions.RampUpTime": "10.0",
             "BoundaryConditions.ObstacleType": "None",
+            "BoundaryConditions.FlowRate": "1.0",
             "ModelParameters.CorrelationLength": "0.1",
-            "ModelParameters.FieldDiffusivity": "0.001",
+            "ModelParameters.FieldDiffusivity": "0.002",
+            "ModelParameters.InitialStddev": "0.2",
+            "LinearSolver.Iterations": "2000",
+            "TimeLoop.TEnd": "20.0s",
+            "TimeLoop.CheckPointPeriod": "0.25s",
         },
     },
     "surface2": {
@@ -59,8 +64,13 @@ SCENARIOS = {
             "BoundaryConditions.Evaporation": "false",
             "BoundaryConditions.RampUpTime": "10.0",
             "BoundaryConditions.ObstacleType": "None",
+            "BoundaryConditions.FlowRate": "1.0",
             "ModelParameters.CorrelationLength": "0.1",
-            "ModelParameters.FieldDiffusivity": "0.001",
+            "ModelParameters.FieldDiffusivity": "0.002",
+            "ModelParameters.InitialStddev": "0.2",
+            "LinearSolver.Iterations": "2000",
+            "TimeLoop.TEnd": "20.0s",
+            "TimeLoop.CheckPointPeriod": "0.25s",
         },
     },
     "surface3": {
@@ -72,8 +82,13 @@ SCENARIOS = {
             "BoundaryConditions.Evaporation": "false",
             "BoundaryConditions.RampUpTime": "10.0",
             "BoundaryConditions.ObstacleType": "None",
+            "BoundaryConditions.FlowRate": "1.0",
             "ModelParameters.CorrelationLength": "0.1",
-            "ModelParameters.FieldDiffusivity": "0.001",
+            "ModelParameters.FieldDiffusivity": "0.002",
+            "ModelParameters.InitialStddev": "0.2",
+            "LinearSolver.Iterations": "2000",
+            "TimeLoop.TEnd": "20.0s",
+            "TimeLoop.CheckPointPeriod": "0.25s",
         },
     },
     "surface4": {
@@ -85,8 +100,13 @@ SCENARIOS = {
             "BoundaryConditions.Evaporation": "false",
             "BoundaryConditions.RampUpTime": "10.0",
             "BoundaryConditions.ObstacleType": "None",
+            "BoundaryConditions.FlowRate": "1.0",
             "ModelParameters.CorrelationLength": "0.1",
-            "ModelParameters.FieldDiffusivity": "0.001",
+            "ModelParameters.FieldDiffusivity": "0.002",
+            "ModelParameters.InitialStddev": "0.2",
+            "LinearSolver.Iterations": "2000",
+            "TimeLoop.TEnd": "20.0s",
+            "TimeLoop.CheckPointPeriod": "0.25s",
         },
     },
 }
@@ -110,8 +130,8 @@ def run_scenario(scenario, num_processes):
     for k, v in params.items():
         command.extend([f"-{k}", v])
     cmd_env = os.environ.copy()
-    cmd_env["DUMUX_NUM_THREADS"] = "1"
-    cmd_env["OMP_NUM_THREADS"] = "1"
+    cmd_env["DUMUX_NUM_THREADS"] = str(8//num_processes)
+    cmd_env["OMP_NUM_THREADS"] = str(8//num_processes)
     subprocess.run(command, env=cmd_env)
 
 if __name__ == "__main__":
