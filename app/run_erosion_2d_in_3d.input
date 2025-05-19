@@ -49,11 +49,10 @@ ObstacleType = Json
 JsonObstacleFile = "obstacles_retina.json"
 
 [LinearSolver]
-MaxIterations = 500
-Preconditioner.ILUOrder = 0
-Preconditioner.Iterations = 1
+MaxIterations = 2000
+Preconditioner.ILUOrder = 1
+Preconditioner.Iterations = 2
 Verbosity = 0
-ResidualReduction = 1e-6
 
 [Newton]
 EnablePartialReassembly = true
