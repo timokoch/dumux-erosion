@@ -69,7 +69,7 @@ dumux
 ```
 
 Applications
---------------
+=========================
 
 Programs are build and run inside the build folder `build-cmake/app`. The build folder
 mimicks the structure of the source folder `app` where you find the header files (source files).
@@ -80,8 +80,10 @@ mimicks the structure of the source folder `app` where you find the header files
 Go to `dumux-granular/build-cmake/app`
 and run
 
-* `make test_erosion_2d`
-* `DUMUX_NUM_THREADS=1 mpirun -np 8 ./test_erosion_2d params.input`
+Acknowledgement
+=========================
 
-Runtime parameters can be set in `params.input`.
-View result files with ParaView.
+The code is based on the [DuMux simulation framework](https://dumux.org/), which
+makes use of the [Distributed Unified Numerics Environment (DUNE)](https://www.dune-project.org/).
+I/O is efficient and easy due to [GridFormat](https://github.com/dglaeser/gridformat).
+Visualizations included in this repo have been made with [ParaView](https://www.paraview.org/).
