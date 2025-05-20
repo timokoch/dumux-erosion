@@ -9,7 +9,7 @@ Governing equations are
 \begin{align}
 \kappa \frac{\partial p}{\partial t} - \nabla \cdot \left( K(\phi) \nabla p \right) &= 0, \\
 \frac{\partial \phi}{\partial t} - \nabla \cdot \left( D \nabla \phi \right) &= -\phi \mathrm{max}\left\lbrace 0, \nabla p : \nabla p - \sigma^2(g) \right\rbrace, \\
-R \frac{\partial g}{\partial t} - \nabla \cdot \left( B \nabla g \right) &= \phi - g,
+\frac{\partial g}{\partial t} - \nabla \cdot \left( B \nabla g \right) &= k_g (\phi - g),
 \end{align}
 ```
 
