@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright © Timo Koch
+# SPDX-License-Identifier: CC0-1.0
+
 cmake_minimum_required(VERSION 3.22)
 project(dumux-erosion CXX)
 

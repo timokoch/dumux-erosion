@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright © Timo Koch
+# SPDX-License-Identifier: CC-BY-4.0
+
 ukb-atlas data
 -----------------
 
