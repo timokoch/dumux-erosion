@@ -27,7 +27,6 @@ dune_project()
 
 add_subdirectory(app)
 add_subdirectory(doc)
-add_subdirectory(cmake/modules)
 
 # finalize the dune project, e.g. generating config.h etc.
 finalize_dune_project()
