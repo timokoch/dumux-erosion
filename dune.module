@@ -3,7 +3,7 @@
 ################################
 
 # Name of the module
-Module: dumux-granular
+Module: dumux-erosion
 Version: 0.1
 Maintainer: timok@simula.no
 # Required build dependencies

@@ -8,7 +8,7 @@ DEPENDENCIES=@REQUIRES@
 
 Name: @PACKAGE_NAME@
 Version: @VERSION@
-Description: dumux-granular module
+Description: dumux-erosion module
 URL: http://dune-project.org/
 Requires: dumux
 Libs: -L${libdir}

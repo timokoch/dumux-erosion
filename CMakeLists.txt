@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.22)
-project(dumux-granular CXX)
+project(dumux-erosion CXX)
 
 if(NOT (dune-common_DIR OR dune-common_ROOT OR
       "${CMAKE_PREFIX_PATH}" MATCHES ".*dune-common.*"))

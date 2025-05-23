@@ -1,4 +1,4 @@
-/* begin dumux-granular
+/* begin dumux-erosion
    put the definitions for config.h specific to
    your project here. Everything above will be
    overwritten
@@ -28,18 +28,18 @@
 
 /* end private */
 
-/* Define to the version of dumux-granular */
-#define Udumux_granular_VERSION "@Udumux_granular_VERSION@"
+/* Define to the version of dumux-erosion */
+#define Udumux_erosion_VERSION "@Udumux_erosion_VERSION@"
 
-/* Define to the major version of dumux-granular */
-#define Udumux_granular_VERSION_MAJOR @Udumux_granular_VERSION_MAJOR@
+/* Define to the major version of dumux-erosion */
+#define Udumux_erosion_VERSION_MAJOR @Udumux_erosion_VERSION_MAJOR@
 
-/* Define to the minor version of dumux-granular */
-#define Udumux_granular_VERSION_MINOR @Udumux_granular_VERSION_MINOR@
+/* Define to the minor version of dumux-erosion */
+#define Udumux_erosion_VERSION_MINOR @Udumux_erosion_VERSION_MINOR@
 
-/* Define to the revision of dumux-granular */
-#define Udumux_granular_VERSION_REVISION @Udumux_granular_VERSION_REVISION@
+/* Define to the revision of dumux-erosion */
+#define Udumux_erosion_VERSION_REVISION @Udumux_erosion_VERSION_REVISION@
 
-/* end dumux-granular
+/* end dumux-erosion
    Everything below here will be overwritten
 */

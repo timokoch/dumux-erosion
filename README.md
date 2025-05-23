@@ -37,13 +37,13 @@ Folder structure would look like this
 
 ```
 dumux
-└───dumux-granular
+└───dumux-erosion
 ```
 
 Then run from the top folder (`dumux`):
 
 ```
-./dumux-granular/setup.sh
+./dumux-erosion/setup.sh
 ```
 
 to download Dune/DuMux dependencies and configure and build the project.
@@ -54,7 +54,7 @@ After that folder structure will look like this:
 
 ```
 dumux
-├───dumux-granular
+├───dumux-erosion
 │    ├───build-cmake/app
 │    ├───app
 │    ├───CMakeLists.txt
@@ -77,7 +77,7 @@ mimicks the structure of the source folder `app` where you find the header files
 2D example
 ------------------------------------
 
-Go to `dumux-granular/build-cmake/app`
+Go to `dumux-erosion/build-cmake/app`
 and run
 
 Acknowledgement
