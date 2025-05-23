@@ -1,9 +1,12 @@
 Erosion model
 ===================
 
-Similar to Derr et al. (2020) Phys. Rev. Lett., [10.1103/PhysRevLett.125.158002](https://doi.org/10.1103/PhysRevLett.125.158002).
+This repository contains a DuMux application for simulating erosion in porous media.
+The model is based on the generalized model of dynamics in threshold materials by
+Fischer, Tauber, Koch, Mahadevan (2025). The erosion model is similar to the
+model described earlier by Derr et al. (2020) Phys. Rev. Lett., [10.1103/PhysRevLett.125.158002](https://doi.org/10.1103/PhysRevLett.125.158002).
 
-Governing equations are
+The implemented governing equations are
 
 ```math
 \begin{align}
@@ -87,3 +90,4 @@ The code is based on the [DuMux simulation framework](https://dumux.org/), which
 makes use of the [Distributed Unified Numerics Environment (DUNE)](https://www.dune-project.org/).
 I/O is efficient and easy due to [GridFormat](https://github.com/dglaeser/gridformat).
 Visualizations included in this repo have been made with [ParaView](https://www.paraview.org/).
+DuMux-erosion in an application developed by Timo Koch.
