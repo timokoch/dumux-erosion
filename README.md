@@ -6,6 +6,8 @@ The model is based on the generalized model of dynamics in threshold materials b
 Fischer, Tauber, Koch, Mahadevan (2025). The erosion model is similar to the
 model described earlier by Derr et al. (2020) Phys. Rev. Lett., [10.1103/PhysRevLett.125.158002](https://doi.org/10.1103/PhysRevLett.125.158002).
 
+![erosion_demo](./doc/img/erosion_demo.png)
+
 The implemented governing equations are
 
 ```math
