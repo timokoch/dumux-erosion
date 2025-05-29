@@ -1,12 +1,16 @@
 Erosion model
 ===================
 
-This repository contains a DuMux application for simulating erosion in porous media.
+This repository contains a DuMux application for simulating erosion in porous media in 2D, 3D, and on embedded surfaces.
 The model is based on the generalized model of dynamics in threshold materials by
 Fischer, Tauber, Koch, Mahadevan (2025). The erosion model is similar to the
 model described earlier by Derr et al. (2020) Phys. Rev. Lett., [10.1103/PhysRevLett.125.158002](https://doi.org/10.1103/PhysRevLett.125.158002).
 
-![erosion_demo](./doc/img/erosion_demo.png)
+![erosion demo](./doc/img/erosion_demo.png)
+
+![erosion demo2](./doc/img/erosion_demo2.png)
+
+![erosion demo2](./doc/img/erosion_demo3.png)
 
 The implemented governing equations are
 
