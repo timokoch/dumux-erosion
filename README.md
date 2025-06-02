@@ -83,11 +83,20 @@ Applications
 Programs are build and run inside the build folder `build-cmake/app`. The build folder
 mimicks the structure of the source folder `app` where you find the header files (source files).
 
-2D example
+Driver script
 ------------------------------------
 
-Go to `dumux-erosion/build-cmake/app`
-and run
+In `dumux-erosion/app` you find the Python driver script `run_scenario.py`.
+
+Run
+```
+python run_scenario.py --help
+```
+
+to see available options and the list of predefined scenarios to select from
+each reproducing a result from the paper by
+Fischer, Tauber, Koch, Mahadevan (2025) (see above).
+
 
 Acknowledgement
 =========================
