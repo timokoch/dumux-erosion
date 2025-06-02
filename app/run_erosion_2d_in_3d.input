@@ -6,43 +6,23 @@ CheckPointPeriod = 0.25s
 
 [Grid]
 File = halfsphere.msh
-#File = sphere.msh
-#File = hyperbolic.msh
-#File = ../../data/heart.msh
-#File = surface.msh
-#File = surface_2.msh
-#File = torus.msh
 
 [Problem]
-#Name = hyperbolic_symmetric
-#Name = hyperbolic_evaporation
-#Name = half_sphere_boundary
 Name = retina
-#Name = sphere_symmetric
-#Name = heart4
-#Name = surface
-#Name = surface_2
-#Name = torus_evaporation
 
 [ModelParameters]
 Omega = 8.0
 PhiStar = 0.8
-CorrelationLength = 0.05
-#CorrelationLength = 0.8 # heart
-FluidCompressibility = 1e-4
-FieldDiffusivity = 0.0007
-#FieldDiffusivity = 0.4 # heart
-FieldRelaxationRate = 0.01
+CorrelationLength = 0.05 # ζ
+FluidCompressibility = 1e-4 # κ
+FieldDiffusivity = 0.07 # D
+FieldRelaxationRate = 100 # k_g
 InitialStddev = 0.3
 
 [BoundaryConditions]
 RampUpTime = 10.0s
 Evaporation = true
 FlowRate = 0.4
-#PointSourcesStrength = 4 4 # heart
-#PointSourcePositions = -14.6428 21.1399 37.5829 -23.9962 9.63808 23.1206 # heart
-#PointSourcesStrength = 1.0 # torus
-#PointSourcePositions = 0.0 -5.0 0.0 # torus
 PointSourcesStrength = 0.7 # retina
 PointSourcePositions = -2.5 -4.33 0.0 # retina
 ObstacleType = Json
