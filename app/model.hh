@@ -106,10 +106,9 @@ public:
     {
         NumEqVector storage;
         const auto kappa = problem.fluidCompressibility();
-        const auto gRelaxationRate = problem.fieldRelaxationRate();
         storage[Indices::massBalanceEqIdx] = kappa*volVars.pressure();
         storage[Indices::solidityEqIdx] = volVars.solidity();
-        storage[Indices::blurEqIdx] = volVars.g()*gRelaxationRate;
+        storage[Indices::blurEqIdx] = volVars.g();
         return storage;
     }
 
@@ -177,7 +176,8 @@ public:
         const auto erosionRateFactor = problem.erosionRateFactor(scv.center());
         source[Indices::solidityEqIdx] = -volVars.solidity()*std::max(0.0, pSquared - psi)*erosionRateFactor;
 
-        source[Indices::blurEqIdx] = volVars.solidity() - volVars.g();
+        const auto gRelaxationRate = problem.fieldRelaxationRate();
+        source[Indices::blurEqIdx] = gRelaxationRate*(volVars.solidity() - volVars.g());
         source += problem.source(element, fvGeometry, elemVolVars, scv);
         return source;
     }
