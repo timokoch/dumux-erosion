@@ -34,8 +34,9 @@ Requirements
 --------------
 
 * cmake >= 3.22
-* C++20 compliant compiler (e.g g++ >= 11 or clang >= 14)
+* C++20 compliant compiler (e.g g++ >= 13 or clang >= 16)
 * pkg-config
+* SuiteSparse
 
 Setup
 --------------
