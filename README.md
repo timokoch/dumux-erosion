@@ -25,7 +25,7 @@ The implemented governing equations are
 where $\phi$ is the solid volume fraction, $K(\phi) = \frac{(1-\phi)^3}{\phi^2}$,
 $\sigma^2(g) = \frac{H(g)-H(0)}{H(1)-H(0)}$ with $H(g) = \frac{1}{2}\left[1 -  \mathrm{tanh}(\omega (g^* - g))\right]$.
 We erode when $||\nabla p||^2 > \sigma^2(g)$, where $\sigma^2(g)$ is a yield stress that depends on the solidity $g$.
-Additionally, the model has parameters $\kappa$, $B$, $D$, $k_g$. 
+Additionally, the model has parameters $\kappa$, $B$, $D$, $k_g$.
 
 Installation
 =========================
@@ -87,7 +87,7 @@ mimicks the structure of the source folder `app` where you find the header files
 Driver script
 ------------------------------------
 
-In `dumux-erosion/app` you find the Python driver script `run_scenario.py`.
+In `dumux-erosion/build-cmake/app` you find the Python driver script `run_scenario.py`.
 
 Run
 ```
