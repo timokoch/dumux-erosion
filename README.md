@@ -2,9 +2,13 @@ Erosion model
 ===================
 
 This repository contains a DuMux application for simulating erosion in porous media in 2D, 3D, and on embedded surfaces.
-The model is based on the generalized model of dynamics in threshold materials by
-Fischer, Tauber, Koch, Mahadevan (2025). The erosion model is similar to the
-model described earlier by Derr et al. (2020) Phys. Rev. Lett., [10.1103/PhysRevLett.125.158002](https://doi.org/10.1103/PhysRevLett.125.158002).
+The model is based on the generalized model of dynamics in threshold materials described in
+the manuscript "Self-organized adaptive branching in frangible matter"
+by P.L.B. Fischer, J. Tauber, T. Koch, L. Mahadevan (2025). The erosion model
+presented here extends an earlier model by Derr et al. (2020) Phys. Rev. Lett., [10.1103/PhysRevLett.125.158002](https://doi.org/10.1103/PhysRevLett.125.158002)
+proposing a dynamic description of non-local effects,
+an implementation on unstructured meshes and manifolds,
+and a control-volume finite element discretization method in space.
 
 ![erosion demo](./doc/img/erosion_demo.png)
 
